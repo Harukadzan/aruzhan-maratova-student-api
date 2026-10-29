@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: aruzhan_postgres
+    environment:
+      POSTGRES_DB: student_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secretpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - aruzhan-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d student_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: aruzhan-maratova-student-api:v1.0-aruzhan-maratova
+    container_name: aruzhan_app
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/student_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=secretpassword
+    ports:
+      - "8081:8081"
+    networks:
+      - aruzhan-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+
+networks:
+  aruzhan-network:
+    driver: bridge
